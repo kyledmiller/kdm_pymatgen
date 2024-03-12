@@ -2196,6 +2196,7 @@ class IStructure(SiteCollection, MSONable):
         pbc: bool = True,
         autosort_tol: float = 0,
         end_amplitude: float = 1,
+        wrap_tol: float = 0,
     ) -> list[IStructure | Structure]:
         """Interpolate between this structure and end_structure. Useful for
         construction of NEB inputs. To obtain useful results, the cell setting
@@ -2278,6 +2279,18 @@ class IStructure(SiteCollection, MSONable):
                 sorted_end_coords[i] = end_coords[j]
 
             end_coords = sorted_end_coords
+
+        ### Unwrap coordinates detected at upper edges of cell
+        #print(f'wrap_tol = {wrap_tol}')
+        if wrap_tol != 0:
+            for coords in [end_coords, start_coords]:
+                for i in range(coords.shape[0]):
+                    for j in range(coords.shape[1]):
+                        if coords[i,j] + wrap_tol >= 1:
+                            #print(f'interpolate(): at edge: {coords[i,j]}')
+                            coords[i,j] = coords[i,j] - 1
+                            #print(f'interpolate(): wrapped: {coords[i,j]}')
+            print(f'Structure diff across interpolate:\n{end_coords - start_coords}')
 
         vec = end_amplitude * (end_coords - start_coords)
         if pbc:
